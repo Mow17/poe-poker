@@ -19,8 +19,6 @@ func JudgeHandRank(cards []Card) HandRank {
 		handRank = TwoPairs
 	case JudgeOnePair(cards):
 		handRank = OnePair
-	default:
-		handRank = HighCard
 	}
 	return handRank
 }
@@ -47,7 +45,7 @@ func JudgeStraightFlush(cards []Card) bool {
 		}
 		tmp_card = card
 	}
-
+	RemoveFourteen(cards)
 	return straightFlush
 }
 

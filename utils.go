@@ -128,3 +128,13 @@ func AreHandEqual(cards1 []Card, cards2 []Card) bool {
 	}
 	return true
 }
+
+func RemoveFourteen(cards []Card) []Card {
+	cardsWithoutFourteen := []Card{}
+	for _, card := range cards {
+		if card.Number != 14 {
+			cardsWithoutFourteen = append(cardsWithoutFourteen, card)
+		}
+	}
+	return cardsWithoutFourteen
+}

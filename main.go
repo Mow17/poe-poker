@@ -35,6 +35,7 @@ func DetermineHandRank(cards []Card) (Hand, error) {
 
 	// Initialize hand
 	rank := JudgeHandRank(cards)
+	fmt.Println("Rank:", rank, "Cards:", cards)
 	selectedCards := SelectStrongestCards(cards, rank)
 	hand := Hand{Rank: rank, Cards: selectedCards}
 
@@ -249,7 +250,27 @@ func CalculateWinRateForSpecificHand(cards []Card) {
 	_RecordWinRateForSpecificHand(cards, winRate, winCount, trials)
 }
 
+// func main() {
+// 	cards := []Card{{Suit: "s", Number: 1}, {Suit: "s", Number: 13}}
+// 	CalculateWinRateForSpecificHand(cards)
+// }
+
 func main() {
-	cards := []Card{{Suit: "s", Number: 1}, {Suit: "s", Number: 13}}
-	CalculateWinRateForSpecificHand(cards)
+	trials := 100
+	for i := 0; i < trials; i++ {
+		deck := NewDeck()
+		deck.Shuffle()
+
+		cards, err := deck.DrawCards(7)
+		if err != nil {
+			fmt.Println("Error:", err)
+		}
+
+		hand, err := DetermineHandRank(cards)
+		if err != nil {
+			fmt.Println("Error:", err)
+		}
+
+		fmt.Println("Cards: ", cards, "Hand:", hand.Rank, hand.Cards)
+	}
 }
