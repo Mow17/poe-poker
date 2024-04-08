@@ -92,3 +92,13 @@ func (d *Deck) DrawSpecificCards(cards []Card) ([]Card, error) {
 func (d *Deck) AddCards(cards []Card) {
 	d.Cards = append(d.Cards, cards...)
 }
+
+func (d *Deck) ValidateDeck() {
+	uniqueCards := make(map[Card]bool)
+	for _, card := range d.Cards {
+		if _, ok := uniqueCards[card]; ok {
+			panic("error: Duplicate cards in the deck")
+		}
+		uniqueCards[card] = true
+	}
+}

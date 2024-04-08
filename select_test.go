@@ -83,6 +83,27 @@ func TestSelectFourOfAKindCards_1(t *testing.T) {
 	assert.Equal(t, correct, expected)
 }
 
+func TestSelectFourOfAKindCards_2(t *testing.T) {
+	cards := []Card{
+		{Suit: "h", Number: 1},
+		{Suit: "d", Number: 1},
+		{Suit: "s", Number: 1},
+		{Suit: "c", Number: 1},
+		{Suit: "h", Number: 13},
+		{Suit: "s", Number: 13},
+		{Suit: "h", Number: 2},
+	}
+	correct := []Card{
+		{Suit: "h", Number: 1},
+		{Suit: "d", Number: 1},
+		{Suit: "s", Number: 1},
+		{Suit: "c", Number: 1},
+		{Suit: "h", Number: 13},
+	}
+	expected, _ := SelectFourOfAKindCards(cards)
+	assert.Equal(t, correct, expected)
+}
+
 func TestSelectFullHouseCards_1(t *testing.T) {
 	cards := []Card{
 		{Suit: "s", Number: 11},
@@ -102,6 +123,27 @@ func TestSelectFullHouseCards_1(t *testing.T) {
 		{Suit: "d", Number: 7},
 	}
 	assert.Equal(t, correct, expected)
+}
+
+func TestSelectFullHouseCards_2(t *testing.T) {
+	cards := []Card{
+		{Suit: "c", Number: 2},
+		{Suit: "h", Number: 2},
+		{Suit: "s", Number: 2},
+		{Suit: "h", Number: 1},
+		{Suit: "d", Number: 1},
+		{Suit: "s", Number: 1},
+		{Suit: "h", Number: 3},
+	}
+	correct := []Card{
+		{Suit: "h", Number: 1},
+		{Suit: "d", Number: 1},
+		{Suit: "s", Number: 1},
+		{Suit: "c", Number: 2},
+		{Suit: "h", Number: 2},
+	}
+	actual, _ := SelectFullHouseCards(cards)
+	assert.Equal(t, correct, actual)
 }
 
 func TestSelectFlushCards_1(t *testing.T) {
@@ -144,6 +186,27 @@ func TestSelectStraightCards_1(t *testing.T) {
 		{Suit: "h", Number: 10},
 	}
 	assert.Equal(t, correct, expected)
+}
+
+func TestSelectStraightCards_2(t *testing.T) {
+	cards := []Card{
+		{Suit: "h", Number: 1},
+		{Suit: "s", Number: 2},
+		{Suit: "h", Number: 3},
+		{Suit: "c", Number: 4},
+		{Suit: "h", Number: 5},
+		{Suit: "h", Number: 6},
+		{Suit: "d", Number: 13},
+	}
+	correct := []Card{
+		{Suit: "h", Number: 6},
+		{Suit: "h", Number: 5},
+		{Suit: "c", Number: 4},
+		{Suit: "h", Number: 3},
+		{Suit: "s", Number: 2},
+	}
+	actual, _ := SelectStraightCards(cards)
+	assert.Equal(t, correct, actual)
 }
 
 func TestSelectThreeOfAKindCards_1(t *testing.T) {

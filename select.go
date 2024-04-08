@@ -2,212 +2,66 @@ package main
 
 import (
 	"errors"
-	"sort"
+	"log"
 )
 
-func SortBySuitPriority(cards []Card) []Card {
-	sort.SliceStable(cards, func(i, j int) bool {
-		// If suits are different, compare by suit priority
-		if cards[i].Suit != cards[j].Suit {
-			return cards[i].Suit < cards[j].Suit
+func SelectStrongestCards(cards []Card, rank HandRank) []Card {
+	switch rank {
+	case StraightFlush:
+		selectedCards, err := SelectStraightFlushCards(cards)
+		if err != nil {
+			log.Panic(err)
 		}
-		// If the suits are the same, compare by number
-		return cards[i].Number < cards[j].Number
-	})
-	return cards
-}
-
-func SortDecreaseingSuitPriority(cards []Card) []Card {
-	sort.SliceStable(cards, func(i, j int) bool {
-		// If suits are different, compare by suit priority
-		if cards[i].Suit != cards[j].Suit {
-			return cards[i].Suit > cards[j].Suit
+		return selectedCards
+	case FourOfAKind:
+		selectedCards, err := SelectFourOfAKindCards(cards)
+		if err != nil {
+			log.Panic(err)
 		}
-		// If the suits are the same, compare by number
-		return cards[i].Number > cards[j].Number
-	})
-	return cards
-}
-
-func SortDecreasing(cards []Card) []Card {
-	sortedCards := make([]Card, len(cards))
-	copy(sortedCards, cards)
-	sort.SliceStable(sortedCards, func(i, j int) bool {
-		return sortedCards[i].Number > sortedCards[j].Number
-	})
-	return sortedCards
-}
-
-func SortIncreasing(cards []Card) []Card {
-	sortedCards := make([]Card, len(cards))
-	copy(sortedCards, cards)
-	sort.SliceStable(sortedCards, func(i, j int) bool {
-		return sortedCards[i].Number < sortedCards[j].Number
-	})
-	return sortedCards
-}
-
-func JudgeStraightFlush(cards []Card) bool {
-	for _, card := range cards {
-		if card.Number == 1 {
-			cards = append(cards, Card{Suit: card.Suit, Number: 14})
+		return selectedCards
+	case FullHouse:
+		selectedCards, err := SelectFullHouseCards(cards)
+		if err != nil {
+			log.Panic(err)
 		}
-	}
-	cards = SortBySuitPriority(cards)
-	straightFlush := false
-	previousSuit := cards[0].Suit
-	serialCount := 1
-	previousNumber := cards[0].Number
-
-	for i, card := range cards {
-		if i == 0 {
-			continue
+		return selectedCards
+	case Flush:
+		selectedCards, err := SelectFlushCards(cards)
+		if err != nil {
+			log.Panic(err)
 		}
-		if card.Suit == previousSuit && card.Number == previousNumber+1 {
-			serialCount++
-		} else {
-			serialCount = 1
+		return selectedCards
+	case Straight:
+		selectedCards, err := SelectStraightCards(cards)
+		if err != nil {
+			log.Panic(err)
 		}
-
-		if serialCount == 5 {
-			straightFlush = true
-			break
+		return selectedCards
+	case ThreeOfAKind:
+		selectedCards, err := SelectThreeOfAKindCards(cards)
+		if err != nil {
+			log.Panic(err)
 		}
-		previousSuit = card.Suit
-		previousNumber = card.Number
-	}
-	return straightFlush
-}
-
-func JudgeFourOfAKind(cards []Card) bool {
-	fourOfAKind := false
-	numCounts := map[int]int{}
-	for _, card := range cards {
-		numCounts[card.Number]++
-	}
-
-	for _, count := range numCounts {
-		if count == 4 {
-			fourOfAKind = true
+		return selectedCards
+	case TwoPairs:
+		selectedCards, err := SelectTwoPairsCards(cards)
+		if err != nil {
+			log.Panic(err)
 		}
-	}
-	return fourOfAKind
-}
-
-func JudgeFullHouse(cards []Card) bool {
-	fullHouse := false
-	numCounts := map[int]int{}
-	for _, card := range cards {
-		numCounts[card.Number]++
-	}
-
-	threeOfAKind := false
-	twoPairs := false
-	for _, count := range numCounts {
-		if count == 3 {
-			threeOfAKind = true
-		} else if count == 2 {
-			twoPairs = true
+		return selectedCards
+	case OnePair:
+		selectedCards, err := SelectOnePairCards(cards)
+		if err != nil {
+			log.Panic(err)
 		}
-	}
-
-	if threeOfAKind && twoPairs {
-		fullHouse = true
-	}
-	return fullHouse
-}
-
-func JudgeFlush(cards []Card) bool {
-	flush := false
-	suitsCount := map[string]int{}
-	for _, card := range cards {
-		suitsCount[card.Suit]++
-	}
-
-	for _, count := range suitsCount {
-		if count >= 5 {
-			flush = true
+		return selectedCards
+	default:
+		selectedCards, err := SelectHighCardCards(cards)
+		if err != nil {
+			log.Panic(err)
 		}
+		return selectedCards
 	}
-	return flush
-}
-
-func JudgeStraight(cards []Card) bool {
-	cards = AddFourteen(cards)
-	cards = SortDecreasing(cards)
-	straight := false
-	serialCount := 1
-	previousNumber := cards[0].Number
-
-	for i, card := range cards {
-		if i == 0 {
-			continue
-		}
-		if card.Number == previousNumber-1 {
-			serialCount++
-		} else if card.Number == previousNumber {
-			continue
-		} else {
-			serialCount = 1
-		}
-
-		if serialCount == 5 {
-			straight = true
-			break
-		}
-		previousNumber = card.Number
-	}
-	return straight
-}
-
-func JudgeThreeOfAKind(cards []Card) bool {
-	threeOfAKind := false
-	numCounts := map[int]int{}
-	for _, card := range cards {
-		numCounts[card.Number]++
-	}
-
-	for _, count := range numCounts {
-		if count == 3 {
-			threeOfAKind = true
-		}
-	}
-	return threeOfAKind
-}
-
-func JudgeTwoPairs(cards []Card) bool {
-	twoPairs := false
-	numCounts := map[int]int{}
-	for _, card := range cards {
-		numCounts[card.Number]++
-	}
-
-	pairCount := 0
-	for _, count := range numCounts {
-		if count == 2 {
-			pairCount++
-		}
-	}
-
-	if pairCount == 2 {
-		twoPairs = true
-	}
-	return twoPairs
-}
-
-func JudgeOnePair(cards []Card) bool {
-	onePair := false
-	numCounts := map[int]int{}
-	for _, card := range cards {
-		numCounts[card.Number]++
-	}
-
-	for _, count := range numCounts {
-		if count == 2 {
-			onePair = true
-		}
-	}
-	return onePair
 }
 
 // Warning: Assuming that there is only one suit in which flush may be completed.
@@ -243,8 +97,10 @@ func SelectStraightFlushCards(cards []Card) ([]Card, error) {
 }
 
 // Warnings: The order of the four-card suit is not guaranteed
+// Warnings: Four-card must be one kind
+// Warnings: The length of cards must be 7 or less
 func SelectFourOfAKindCards(cards []Card) ([]Card, error) {
-	cards = AddFourteen(cards)
+	cards = ReplaceAceWithFouteenFromOne(cards)
 
 	numCounts := map[int]int{}
 	for _, card := range cards {
@@ -274,7 +130,6 @@ func SelectFourOfAKindCards(cards []Card) ([]Card, error) {
 	}
 	hand = append(hand, highestCard)
 	hand = ReplaceAceWithOneFromFourteen(hand)
-
 	return hand, nil
 }
 
@@ -290,11 +145,14 @@ func SelectFullHouseCards(cards []Card) ([]Card, error) {
 
 	// Identify highest numbers on three cards and two cards
 	tmpHighestNumberOfThreeCards := 0
-	tmpHighestNumberOfTwoCards := 0
 	for number, count := range numCounts {
 		if count == 3 && number > tmpHighestNumberOfThreeCards {
 			tmpHighestNumberOfThreeCards = number
-		} else if count == 2 && number > tmpHighestNumberOfTwoCards {
+		}
+	}
+	tmpHighestNumberOfTwoCards := 0
+	for number, count := range numCounts {
+		if count >= 2 && number > tmpHighestNumberOfTwoCards && number != tmpHighestNumberOfThreeCards {
 			tmpHighestNumberOfTwoCards = number
 		}
 	}
@@ -310,19 +168,24 @@ func SelectFullHouseCards(cards []Card) ([]Card, error) {
 			hand = append(hand, card)
 		}
 	}
+	countAdded := 0
 	for _, card := range cards {
 		if card.Number == tmpHighestNumberOfTwoCards {
 			hand = append(hand, card)
+			countAdded++
+		}
+		if countAdded == 2 {
+			break
 		}
 	}
 
 	hand = ReplaceAceWithOneFromFourteen(hand)
-
 	return hand, nil
 }
 
+// Warnings: Flush must be only one suit
 func SelectFlushCards(cards []Card) ([]Card, error) {
-	cards = AddFourteen(cards)
+	cards = ReplaceAceWithFouteenFromOne(cards)
 	cards = SortDecreaseingSuitPriority(cards)
 
 	// Identify the suit with flush
@@ -355,7 +218,6 @@ func SelectFlushCards(cards []Card) ([]Card, error) {
 	}
 
 	hand = ReplaceAceWithOneFromFourteen(hand)
-
 	return hand, nil
 }
 
@@ -373,7 +235,9 @@ func SelectStraightCards(cards []Card) ([]Card, error) {
 			if len(hand) == 5 {
 				break
 			}
-		} else if card.Number != hand[len(hand)-1].Number {
+		} else if card.Number == hand[len(hand)-1].Number {
+			continue
+		} else {
 			hand = []Card{card}
 		}
 	}
@@ -382,12 +246,12 @@ func SelectStraightCards(cards []Card) ([]Card, error) {
 	}
 
 	hand = ReplaceAceWithOneFromFourteen(hand)
-
 	return hand, nil
 }
 
 func SelectThreeOfAKindCards(cards []Card) ([]Card, error) {
 	cards = ReplaceAceWithFouteenFromOne(cards)
+	cards = SortDecreasing(cards)
 
 	numCounts := map[int]int{}
 	for _, card := range cards {
@@ -407,25 +271,29 @@ func SelectThreeOfAKindCards(cards []Card) ([]Card, error) {
 	}
 
 	hand := []Card{}
-	highestCards := []Card{}
 	for _, card := range cards {
 		if card.Number == threeOfAKindNumber {
 			hand = append(hand, card)
-		} else {
-			highestCards = append(highestCards, card)
 		}
 	}
-	sort.Slice(highestCards, func(i, j int) bool {
-		return highestCards[i].Number > highestCards[j].Number
-	})
-	hand = append(hand, highestCards[:2]...)
-	hand = ReplaceAceWithOneFromFourteen(hand)
+	countAdded := 0
+	for _, card := range cards {
+		if card.Number != threeOfAKindNumber {
+			hand = append(hand, card)
+			countAdded++
+		}
+		if countAdded == 2 {
+			break
+		}
+	}
 
+	hand = ReplaceAceWithOneFromFourteen(hand)
 	return hand, nil
 }
 
 func SelectTwoPairsCards(cards []Card) ([]Card, error) {
 	cards = ReplaceAceWithFouteenFromOne(cards)
+	cards = SortDecreasing(cards)
 
 	numCounts := map[int]int{}
 	for _, card := range cards {
@@ -452,28 +320,31 @@ func SelectTwoPairsCards(cards []Card) ([]Card, error) {
 
 	// Select the highest two pairs
 	hand := []Card{}
-	highestCard := Card{Number: 0}
 	for _, card := range cards {
 		if card.Number == tmpHighestNumberOfFirstPair {
 			hand = append(hand, card)
-		} else if card.Number != tmpHighestNumberOfSecondPair && card.Number > highestCard.Number {
-			highestCard = card
 		}
 	}
-
 	for _, card := range cards {
 		if card.Number == tmpHighestNumberOfSecondPair {
 			hand = append(hand, card)
 		}
 	}
-	hand = append(hand, highestCard)
-	hand = ReplaceAceWithOneFromFourteen(hand)
+	for _, card := range cards {
+		if card.Number != tmpHighestNumberOfFirstPair && card.Number != tmpHighestNumberOfSecondPair {
+			hand = append(hand, card)
+			break
+		}
+	}
 
+	hand = ReplaceAceWithOneFromFourteen(hand)
 	return hand, nil
 }
 
 func SelectOnePairCards(cards []Card) ([]Card, error) {
 	cards = ReplaceAceWithFouteenFromOne(cards)
+	cards = SortDecreasing(cards)
+
 	numCounts := map[int]int{}
 	for _, card := range cards {
 		numCounts[card.Number]++
@@ -492,32 +363,31 @@ func SelectOnePairCards(cards []Card) ([]Card, error) {
 	}
 
 	hand := []Card{}
-	highestCards := []Card{}
 	for _, card := range cards {
 		if card.Number == onePairNumber {
 			hand = append(hand, card)
-		} else {
-			highestCards = append(highestCards, card)
 		}
 	}
-	sort.Slice(highestCards, func(i, j int) bool {
-		return highestCards[i].Number > highestCards[j].Number
-	})
-	hand = append(hand, highestCards[:3]...)
+	countAdded := 0
+	for _, card := range cards {
+		if card.Number != onePairNumber {
+			hand = append(hand, card)
+			countAdded++
+		}
+		if countAdded == 3 {
+			break
+		}
+	}
 	hand = ReplaceAceWithOneFromFourteen(hand)
-
 	return hand, nil
 }
 
 func SelectHighCardCards(cards []Card) ([]Card, error) {
-	cards = AddFourteen(cards)
+	cards = ReplaceAceWithFouteenFromOne(cards)
+	cards = SortDecreasing(cards)
 
-	// Sort cards in descending order
-	sort.Slice(cards, func(i, j int) bool {
-		return cards[i].Number > cards[j].Number
-	})
+	hand := cards[:5]
 
-	hand := ReplaceAceWithOneFromFourteen(cards[:5])
-
+	hand = ReplaceAceWithOneFromFourteen(hand)
 	return hand, nil
 }

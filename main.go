@@ -28,67 +28,15 @@ type Hand struct {
 	Cards []Card
 }
 
-func JudgeHandRank(cards []Card) HandRank {
-	cards = SortIncreasing(cards)
-	handRank := HighCard
-	switch {
-	case JudgeStraightFlush(cards):
-		handRank = StraightFlush
-	case JudgeFourOfAKind(cards):
-		handRank = FourOfAKind
-	case JudgeFullHouse(cards):
-		handRank = FullHouse
-	case JudgeFlush(cards):
-		handRank = Flush
-	case JudgeStraight(cards):
-		handRank = Straight
-	case JudgeThreeOfAKind(cards):
-		handRank = ThreeOfAKind
-	case JudgeTwoPairs(cards):
-		handRank = TwoPairs
-	case JudgeOnePair(cards):
-		handRank = OnePair
-	default:
-		handRank = HighCard
-	}
-	return handRank
-}
-
-func SelectStrongestCards(cards []Card, rank HandRank) []Card {
-	selectedCards := make([]Card, 5)
-	switch rank {
-	case StraightFlush:
-		selectedCards, _ = SelectStraightFlushCards(cards)
-	case FourOfAKind:
-		selectedCards, _ = SelectFourOfAKindCards(cards)
-	case FullHouse:
-		selectedCards, _ = SelectFullHouseCards(cards)
-	case Flush:
-		selectedCards, _ = SelectFlushCards(cards)
-	case Straight:
-		selectedCards, _ = SelectStraightCards(cards)
-	case ThreeOfAKind:
-		selectedCards, _ = SelectThreeOfAKindCards(cards)
-	case TwoPairs:
-		selectedCards, _ = SelectTwoPairsCards(cards)
-	case OnePair:
-		selectedCards, _ = SelectOnePairCards(cards)
-	case HighCard:
-		selectedCards, _ = SelectHighCardCards(cards)
-	}
-	selectedCards = ReplaceAceWithOneFromFourteen(selectedCards)
-	return selectedCards
-}
-
 func DetermineHandRank(cards []Card) (Hand, error) {
 	if len(cards) < 5 {
 		return Hand{}, errors.New("given cards are less than 5 and no rank can be determined")
 	}
 
 	// Initialize hand
-	hand := Hand{Rank: HighCard, Cards: []Card{}}
-	hand.Rank = JudgeHandRank(cards)
-	hand.Cards = SelectStrongestCards(cards, hand.Rank)
+	rank := JudgeHandRank(cards)
+	selectedCards := SelectStrongestCards(cards, rank)
+	hand := Hand{Rank: rank, Cards: selectedCards}
 
 	return hand, nil
 }
@@ -123,11 +71,14 @@ func CalculateHandProbability() {
 }
 
 // Warnings: Length of hand1.Cards and hand2.Cards must be 5
-// Return 1 if hand1 wins, 2 if hand2 wins, 0 if it's a tie
+// Return 1 if hand1 wins, 2 if hand2 wins, 0 if it's a tie, -1 if error
 func CompareTwoHands(hand1 Hand, hand2 Hand) (int, error) {
-	if len(hand1.Cards) != 5 || len(hand2.Cards) != 5 {
-		return -1, errors.New("length of hand1.Cards and hand2.Cards must be 5")
-
+	if len(hand1.Cards) != 5 {
+		fmt.Println("hand1.Cards:", hand1.Cards)
+		return -1, errors.New("length of hand1.Cards must be 5")
+	} else if len(hand2.Cards) != 5 {
+		fmt.Println("hand2.Cards:", hand2.Cards)
+		return -1, errors.New("length of hand2.Cards must be 5")
 	}
 	// Return 1 if hand1 wins, 2 if hand2 wins, 0 if it's a tie
 	if hand1.Rank > hand2.Rank {
@@ -137,12 +88,12 @@ func CompareTwoHands(hand1 Hand, hand2 Hand) (int, error) {
 	}
 
 	// Compare the cards of the same rank
-	hand1.Cards = ReplaceAceWithFouteenFromOne(hand1.Cards)
-	hand2.Cards = ReplaceAceWithFouteenFromOne(hand2.Cards)
+	cards_p1 := ReplaceAceWithFouteenFromOne(hand1.Cards)
+	cards_p2 := ReplaceAceWithFouteenFromOne(hand2.Cards)
 	for i := 0; i < 5; i++ {
-		if hand1.Cards[i].Number > hand2.Cards[i].Number {
+		if cards_p1[i].Number > cards_p2[i].Number {
 			return 1, nil
-		} else if hand1.Cards[i].Number < hand2.Cards[i].Number {
+		} else if cards_p1[i].Number < cards_p2[i].Number {
 			return 2, nil
 		}
 	}
@@ -174,20 +125,6 @@ func DetermineHandWinner(hands []Hand) ([]Hand, error) {
 		}
 	}
 	return sortedHands, nil
-}
-
-func AreHandEqual(cards1 []Card, cards2 []Card) bool {
-	if len(cards1) != len(cards2) {
-		return false
-	}
-	cards1 = SortIncreasing(cards1)
-	cards2 = SortIncreasing(cards2)
-	for i := 0; i < len(cards1); i++ {
-		if cards1[i].Number != cards2[i].Number {
-			return false
-		}
-	}
-	return true
 }
 
 func PrintRandomHandResult() {
@@ -275,25 +212,31 @@ func CalculateWinRateForSpecificHand(cards []Card) {
 	cards_p1, _ := deck.DrawSpecificCards(cards)
 	deck.Shuffle()
 
-	trials := 100000
+	trials := 100
 	winCount := 0
 	chopCount := 0
 	loseCount := 0
 	for i := 0; i < trials; i++ {
 		cards_p2, _ := deck.DrawCards(2)
 		board, _ := deck.DrawCards(5)
+
 		cards_p1_board := append(cards_p1, board...)
 		cards_p2_board := append(cards_p2, board...)
+		fmt.Println("Player 1's cards:", cards_p1, "Player 2's cards:", cards_p2, "Board cards:", board)
+
 		hand_p1, _ := DetermineHandRank(cards_p1_board)
 		hand_p2, _ := DetermineHandRank(cards_p2_board)
+		fmt.Println("Player 1's hands:", hand_p1.Cards, "Player 2's hands:", hand_p2.Cards)
 
-		resultCompareTwoHands, _ := CompareTwoHands(hand_p1, hand_p2)
+		resultCompareTwoHands, err := CompareTwoHands(hand_p1, hand_p2)
 		if resultCompareTwoHands == 1 {
 			winCount++
 		} else if resultCompareTwoHands == 0 {
 			chopCount++
 		} else if resultCompareTwoHands == 2 {
 			loseCount++
+		} else {
+			fmt.Println("Error:", err)
 		}
 		deck.AddCards(cards_p2_board)
 		deck.Shuffle()

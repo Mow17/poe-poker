@@ -49,6 +49,49 @@ func TestJudgeHandRank3(t *testing.T) {
 	assert.Equal(t, HighCard, rank)
 }
 
+func TestJudgeStraightFlush_1(t *testing.T) {
+	cards := []Card{
+		{Suit: "s", Number: 13},
+		{Suit: "h", Number: 1},
+		{Suit: "s", Number: 11},
+		{Suit: "s", Number: 1},
+		{Suit: "f", Number: 12},
+		{Suit: "s", Number: 12},
+		{Suit: "s", Number: 10},
+	}
+	flag := JudgeStraightFlush(cards)
+	assert.Equal(t, true, flag)
+}
+
+func TestJudgeStraightFlush_2(t *testing.T) {
+	cards := []Card{
+		{Suit: "s", Number: 6},
+		{Suit: "s", Number: 5},
+		{Suit: "h", Number: 7},
+		{Suit: "s", Number: 1},
+		{Suit: "s", Number: 2},
+		{Suit: "s", Number: 4},
+		{Suit: "d", Number: 3},
+	}
+	flag := JudgeStraightFlush(cards)
+	assert.Equal(t, false, flag)
+}
+
+func TestJudgeStraight_1(t *testing.T) {
+	cards := []Card{
+		{Suit: "s", Number: 13},
+		{Suit: "h", Number: 1},
+		{Suit: "s", Number: 11},
+		{Suit: "s", Number: 1},
+		{Suit: "d", Number: 12},
+		{Suit: "s", Number: 12},
+		{Suit: "s", Number: 10},
+	}
+	flag := JudgeStraight(cards)
+	assert.Equal(t, true, flag)
+
+}
+
 func TestJudgeStraight(t *testing.T) {
 	cards := []Card{
 		{Suit: "s", Number: 11},
