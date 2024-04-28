@@ -3,7 +3,7 @@ package main
 import (
 	"errors"
 	"fmt"
-	"os"
+	"math/rand"
 	"strconv"
 	"time"
 )
@@ -22,10 +22,32 @@ const (
 	StraightFlush
 )
 
+type Position int
+
+const (
+	SB Position = iota
+	BB
+)
+
 type Hand struct {
 	pid   int
 	Rank  HandRank
 	Cards []Card
+}
+
+type Player struct {
+	Id         int
+	Position   Position
+	Stuck      int
+	Cards      []Card
+	Betting    int
+	LastAction *string
+}
+
+type Board struct {
+	Cards   []Card
+	Pod     int
+	BetSize int
 }
 
 func DetermineHandRank(cards []Card) (Hand, error) {
@@ -34,41 +56,15 @@ func DetermineHandRank(cards []Card) (Hand, error) {
 	}
 
 	// Initialize hand
+	// fmt.Println("Cards:", cards)
 	rank := JudgeHandRank(cards)
-	fmt.Println("Rank:", rank, "Cards:", cards)
+	// fmt.Println("Rank:", rank, "Cards:", cards)
+
 	selectedCards := SelectStrongestCards(cards, rank)
+
 	hand := Hand{Rank: rank, Cards: selectedCards}
-
+	// fmt.Println("Cards: ", cards, "Hand:", hand.Rank, hand.Cards)
 	return hand, nil
-}
-
-func CalculateHandProbability() {
-	start := time.Now()
-	statisticsHandRank := make(map[HandRank]int)
-
-	// Trials=100000 -> Time taken: 1.5s
-	// Trials=1000000 -> Time taken: 23.5s
-	// Trials=10000000 -> Time taken: 2m25.3s
-	trials := 100000
-
-	for i := 0; i < trials; i++ {
-		deck := NewDeck()
-		deck.Shuffle()
-		cards, _ := deck.DrawCards(7)
-
-		hand, _ := DetermineHandRank(cards)
-		statisticsHandRank[hand.Rank]++
-	}
-
-	for rank, count := range statisticsHandRank {
-		percentage := float64(count) / float64(trials) * 100
-		fmt.Printf("%s: %.4f%%\n", ConvertRankNumberToRank(rank), percentage)
-	}
-
-	elapsed := time.Since(start)
-	fmt.Printf("Time taken: %s\n", elapsed)
-	// Print the average time taken for each trial
-	fmt.Printf("Average time taken for each trial: %s\n", elapsed/time.Duration(trials))
 }
 
 // Warnings: Length of hand1.Cards and hand2.Cards must be 5
@@ -150,6 +146,8 @@ func ConvertNumberToSymbol(number int) string {
 	switch number {
 	case 1:
 		return "A"
+	case 10:
+		return "T"
 	case 11:
 		return "J"
 	case 12:
@@ -186,91 +184,178 @@ func ConvertCardsToSymbol(cards []Card) (string, error) {
 	return cards_str, nil
 }
 
-// the length of cards must be 2
-func _RecordWinRateForSpecificHand(cards []Card, winRate float64, winCount int, trials int) error {
-	if len(cards) != 2 {
-		return errors.New("the length of cards must be 2")
-	}
-	filename := "win_rate.txt"
-	file, err := os.OpenFile(filename, os.O_APPEND|os.O_CREATE|os.O_RDONLY, 0644)
-	if err != nil {
-		fmt.Println("error opening file: ", err)
-	}
-	defer file.Close()
-
-	cards_str, _ := ConvertCardsToSymbol(cards)
-	now := time.Now().Format("2006-01-02 15:04:05")
-	content := fmt.Sprintf("%s %s %.4f %d %d", now, cards_str, winRate, winCount, trials)
-	if _, err := file.WriteString(content + "\n"); err != nil {
-		return err
-	} else {
-		return nil
-	}
-}
-
-func CalculateWinRateForSpecificHand(cards []Card) {
+func main() {
 	deck := NewDeck()
-	cards_p1, _ := deck.DrawSpecificCards(cards)
 	deck.Shuffle()
 
-	trials := 100
-	winCount := 0
-	chopCount := 0
-	loseCount := 0
-	for i := 0; i < trials; i++ {
-		cards_p2, _ := deck.DrawCards(2)
-		board, _ := deck.DrawCards(5)
-
-		cards_p1_board := append(cards_p1, board...)
-		cards_p2_board := append(cards_p2, board...)
-		fmt.Println("Player 1's cards:", cards_p1, "Player 2's cards:", cards_p2, "Board cards:", board)
-
-		hand_p1, _ := DetermineHandRank(cards_p1_board)
-		hand_p2, _ := DetermineHandRank(cards_p2_board)
-		fmt.Println("Player 1's hands:", hand_p1.Cards, "Player 2's hands:", hand_p2.Cards)
-
-		resultCompareTwoHands, err := CompareTwoHands(hand_p1, hand_p2)
-		if resultCompareTwoHands == 1 {
-			winCount++
-		} else if resultCompareTwoHands == 0 {
-			chopCount++
-		} else if resultCompareTwoHands == 2 {
-			loseCount++
-		} else {
-			fmt.Println("Error:", err)
-		}
-		deck.AddCards(cards_p2_board)
-		deck.Shuffle()
-
-		// Print the result of each trial
-		// fmt.Println("Trial", i+1, ":", "Player 1's cards:", cards_p1, "Player 2's cards:", cards_p2, "Board cards:", board, "Player", resultCompareTwoHands, "wins")
+	action_list := []string{
+		"f",
+		"cK", "cRf", "cRc", "cRrF", "cRrC", "cRrRf", "cRrRc", "cRrRaF", "cRrRaC",
+		"rF", "rC", "rRf", "rRc", "rRrF", "rRrC", "rRrAf", "rRrAc",
 	}
-	winRate := float64(winCount) / float64(trials) * 100
-	fmt.Printf("Win rate: %.4f%% Wins: %d Loses: %d Chops: %d Trials: %d\n", winRate, winCount, loseCount, chopCount, trials)
-	_RecordWinRateForSpecificHand(cards, winRate, winCount, trials)
-}
 
-// func main() {
-// 	cards := []Card{{Suit: "s", Number: 1}, {Suit: "s", Number: 13}}
-// 	CalculateWinRateForSpecificHand(cards)
-// }
-
-func main() {
-	trials := 100
+	f := 0
+	c := 0
+	r := 0
+	trials := 1000000
+	result := make(map[string]float64)
 	for i := 0; i < trials; i++ {
-		deck := NewDeck()
+		// Create Player 1
+		player_1 := Player{Id: 1, Stuck: 100, Position: SB, LastAction: nil}
+		cards_p1, _ := deck.DrawSpecificCards([]Card{{Number: 1, Suit: "s"}, {Number: 13, Suit: "d"}})
+		player_1.Cards = cards_p1
+		// fmt.Println("Player 1's cards:", cards_p1)
+
+		// Create Player 2
+		player_2 := Player{Id: 2, Stuck: 100, Position: BB, LastAction: nil}
+		cards_p2, _ := deck.DrawCards(2)
+		player_2.Cards = cards_p2
+
+		// Init Board
+		board := Board{Pod: 0, BetSize: 0}
+		bb := 2
+		sb := 1
+		player_1.Betting = sb
+		player_1.Stuck -= sb
+		player_2.Betting = bb
+		player_2.Stuck -= bb
+		board.BetSize = bb
+
+		// Determine Actions
+		rand.Seed(time.Now().UnixNano())
+		randomIndex := rand.Intn(len(action_list))
+		actions := action_list[randomIndex]
+
+		for _, action_chr := range actions {
+			if action_chr == 'f' {
+				// Put the chips which put out into the pod
+				board.Pod += player_1.Betting
+				player_1.Betting = 0
+				// Get the pod and return the chips which put out
+				player_2.Stuck += board.Pod + player_2.Betting
+				board.Pod = 0
+				player_2.Betting = 0
+				// Player 1 Action Done
+				player_1.LastAction = &actions
+				break
+			} else if action_chr == 'c' {
+				// Subtract the difference between the raise size and the current betting size from the player's stuck
+				player_1.Stuck -= board.BetSize - player_1.Betting
+				player_1.Betting = board.BetSize
+				// Player 2 Action Done
+				player_1.LastAction = &actions
+			} else if action_chr == 'r' {
+				// Determine raise size
+				raise_size := board.BetSize * 3
+				// Subtract the difference between the raise size and the current betting size from the player's stuck
+				player_1.Stuck -= raise_size - player_1.Betting
+				player_1.Betting = raise_size
+				board.BetSize = raise_size
+				// Player 1 Action Done
+				player_1.LastAction = &actions
+			} else if action_chr == 'a' {
+				// Determine raise size
+				raise_size := player_1.Stuck + player_1.Betting
+				// Subtract the difference between the raise size and the current betting size from the player's stuck
+				player_1.Stuck = 0
+				player_1.Betting = raise_size
+				board.BetSize = raise_size
+			} else if action_chr == 'F' {
+				// Put the chips which put out into the pod
+				board.Pod += player_2.Betting
+				player_2.Betting = 0
+				// Get the pod and return the chips which put out
+				player_1.Stuck += board.Pod + player_1.Betting
+				board.Pod = 0
+				player_1.Betting = 0
+				// Player 2 Action Done
+				player_2.LastAction = &actions
+				break
+			} else if action_chr == 'C' {
+				// Subtract the difference between the raise size and the current betting size from the player's stuck
+				player_2.Stuck -= board.BetSize - player_2.Betting
+				player_2.Betting = board.BetSize
+				// Player 2 Action Done
+				player_2.LastAction = &actions
+			} else if action_chr == 'R' {
+				// Determine raise size
+				raise_size := board.BetSize * 3
+				// Subtract the difference between the raise size and the current betting size from the player's stuck
+				player_2.Stuck -= raise_size - player_2.Betting
+				player_2.Betting = raise_size
+				board.BetSize = raise_size
+				// Player 2 Action Done
+				player_2.LastAction = &actions
+			} else if action_chr == 'K' {
+				board.Pod += player_1.Betting + player_2.Betting
+				player_1.Betting = 0
+				player_2.Betting = 0
+				// Player 2 Action Done
+				player_2.LastAction = &actions
+			} else if action_chr == 'A' {
+				// Determine raise size
+				raise_size := player_2.Stuck + player_2.Betting
+				// Subtract the difference between the raise size and the current betting size from the player's stuck
+				player_2.Stuck = 0
+				player_2.Betting = raise_size
+				board.BetSize = raise_size
+			}
+
+			// Determine Showdown
+			showdown := false
+			if player_1.LastAction != nil && player_2.LastAction != nil && player_1.Betting == player_2.Betting {
+				showdown = true
+			}
+
+			if showdown {
+				// Put all bets in the pot
+				board.Pod += player_1.Betting + player_2.Betting
+				// Decide the winner
+				board.Cards, _ = deck.DrawCards(5)
+				hand_p1, _ := DetermineHandRank(append(player_1.Cards, board.Cards...))
+				hand_p2, _ := DetermineHandRank(append(player_2.Cards, board.Cards...))
+				resultCompareTwoHands, _ := CompareTwoHands(hand_p1, hand_p2)
+				if resultCompareTwoHands == 1 {
+					player_1.Stuck += board.Pod
+				} else if resultCompareTwoHands == 2 {
+					player_2.Stuck += board.Pod
+				} else if resultCompareTwoHands == 0 {
+					player_1.Stuck += board.Pod / 2
+					player_2.Stuck += board.Pod / 2
+				} else {
+					panic("error -1")
+				}
+			}
+		}
+		deck.AddCards(board.Cards)
+		deck.AddCards(player_1.Cards)
+		deck.AddCards(player_2.Cards)
 		deck.Shuffle()
-
-		cards, err := deck.DrawCards(7)
-		if err != nil {
-			fmt.Println("Error:", err)
+		res := float64(player_1.Stuck) - 100
+		result[actions] += res
+		if actions[0] == 'f' {
+			f++
+		} else if actions[0] == 'c' {
+			c++
+		} else if actions[0] == 'r' {
+			r++
 		}
+	}
 
-		hand, err := DetermineHandRank(cards)
-		if err != nil {
-			fmt.Println("Error:", err)
+	first_action_result := make(map[string]float64)
+	for key, value := range result {
+		first_action := string(key[0])
+		first_action_result[first_action] += value
+	}
+	for key, value := range first_action_result {
+		ev := 0.00
+		if key == "f" {
+			ev = value / float64(f)
+		} else if key == "c" {
+			ev = value / float64(c)
+		} else if key == "r" {
+			ev = value / float64(r)
 		}
-
-		fmt.Println("Cards: ", cards, "Hand:", hand.Rank, hand.Cards)
+		fmt.Printf("First Action: %s, Result: %.2f\n", key, ev)
 	}
 }

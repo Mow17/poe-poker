@@ -3,30 +3,39 @@ package main
 import "sort"
 
 func ReplaceAceWithOneFromFourteen(cards []Card) []Card {
-	for i, card := range cards {
+	cards_copy := make([]Card, len(cards))
+	copy(cards_copy, cards)
+
+	for i, card := range cards_copy {
 		if card.Number == 14 {
-			cards[i].Number = 1
+			cards_copy[i].Number = 1
 		}
 	}
-	return cards
+	return cards_copy
 }
 
 func ReplaceAceWithFouteenFromOne(cards []Card) []Card {
-	for i, card := range cards {
+	cards_copy := make([]Card, len(cards))
+	copy(cards_copy, cards)
+
+	for i, card := range cards_copy {
 		if card.Number == 1 {
-			cards[i].Number = 14
+			cards_copy[i].Number = 14
 		}
 	}
-	return cards
+	return cards_copy
 }
 
 func AddFourteen(cards []Card) []Card {
-	for _, card := range cards {
+	cards_copy := make([]Card, len(cards))
+	copy(cards_copy, cards)
+
+	for _, card := range cards_copy {
 		if card.Number == 1 {
-			cards = append(cards, Card{Suit: card.Suit, Number: 14})
+			cards_copy = append(cards_copy, Card{Suit: card.Suit, Number: 14})
 		}
 	}
-	return cards
+	return cards_copy
 }
 
 func ConvertRankNumberToRank(rankNumber HandRank) string {
@@ -55,32 +64,38 @@ func ConvertRankNumberToRank(rankNumber HandRank) string {
 }
 
 func SortIncreasingSuitPriority(cards []Card) []Card {
-	sort.SliceStable(cards, func(i, j int) bool {
+	sortedCards := make([]Card, len(cards))
+	copy(sortedCards, cards)
+
+	sort.SliceStable(sortedCards, func(i, j int) bool {
 		// If suits are different, compare by suit priority
-		if cards[i].Suit != cards[j].Suit {
-			return cards[i].Suit < cards[j].Suit
+		if sortedCards[i].Suit != sortedCards[j].Suit {
+			return sortedCards[i].Suit < sortedCards[j].Suit
 		}
 		// If the suits are the same, compare by number
-		return cards[i].Number < cards[j].Number
+		return sortedCards[i].Number < sortedCards[j].Number
 	})
-	return cards
+	return sortedCards
 }
 
 func SortDecreaseingSuitPriority(cards []Card) []Card {
-	sort.SliceStable(cards, func(i, j int) bool {
+	sortedCards := make([]Card, len(cards))
+	copy(sortedCards, cards)
+	sort.SliceStable(sortedCards, func(i, j int) bool {
 		// If suits are different, compare by suit priority
-		if cards[i].Suit != cards[j].Suit {
-			return cards[i].Suit > cards[j].Suit
+		if sortedCards[i].Suit != sortedCards[j].Suit {
+			return sortedCards[i].Suit > sortedCards[j].Suit
 		}
 		// If the suits are the same, compare by number
-		return cards[i].Number > cards[j].Number
+		return sortedCards[i].Number > sortedCards[j].Number
 	})
-	return cards
+	return sortedCards
 }
 
 func SortDecreasing(cards []Card) []Card {
 	sortedCards := make([]Card, len(cards))
 	copy(sortedCards, cards)
+
 	sort.SliceStable(sortedCards, func(i, j int) bool {
 		return sortedCards[i].Number > sortedCards[j].Number
 	})
@@ -90,6 +105,7 @@ func SortDecreasing(cards []Card) []Card {
 func SortIncreasing(cards []Card) []Card {
 	sortedCards := make([]Card, len(cards))
 	copy(sortedCards, cards)
+
 	sort.SliceStable(sortedCards, func(i, j int) bool {
 		return sortedCards[i].Number < sortedCards[j].Number
 	})

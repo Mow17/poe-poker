@@ -1,6 +1,7 @@
 package main
 
-func JudgeHandRank(cards []Card) HandRank {
+func JudgeHandRank(cards_org []Card) HandRank {
+	cards := cards_org
 	handRank := HighCard
 	switch {
 	case JudgeStraightFlush(cards):
